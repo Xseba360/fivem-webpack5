@@ -10,6 +10,7 @@ function getStat(path) {
 			mtime: stat.mtimeMs,
 			size: stat.size,
 			inode: stat.ino,
+			isDirectory: stat.isDirectory()
 		} : null;
 	} catch {
 		return null;
@@ -18,17 +19,24 @@ function getStat(path) {
 
 class SaveStatePlugin {
 	constructor(inp) {
-		this.cache = [];
+		this.cache = new Map();
 		this.cachePath = inp.cachePath;
 	}
 
 	apply(compiler) {
 		compiler.hooks.afterCompile.tap('SaveStatePlugin', (compilation) => {
 			for (const file of compilation.fileDependencies) {
-				this.cache.push({
-					name: file,
-					stats: getStat(file)
-				});
+				const stats = getStat(file)
+				if (stats && !stats.isDirectory) {
+					this.cache.set(file, {
+						name: file,
+						stats: {
+							mtime: stats.mtime,
+							size: stats.size,
+							inode: stats.inode
+						}
+					});
+				}
 			}
 		});
 
@@ -37,7 +45,15 @@ class SaveStatePlugin {
 				return;
 			}
 
-			fs.writeFile(this.cachePath, JSON.stringify(this.cache), () => {
+			fs.writeFile(this.cachePath, JSON.stringify(Array.from(this.cache.values()).sort((a, b) => {
+					if (a.name < b.name) {
+						return -1;
+					}
+					if (a.name > b.name) {
+						return 1;
+					}
+					return 0;
+				})), () => {
 
 			});
 		});
