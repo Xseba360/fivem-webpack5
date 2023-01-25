@@ -20,7 +20,7 @@ ensure webpack5
 
 
 
-In YOUR RESOURCE (don't go around changing it in random resources that don't need it!), replace this:
+In YOUR RESOURCE **<ins>(don't go around changing it in random resources that don't need it!)</ins>**, replace this:
 
 ```lua
 dependencies {
